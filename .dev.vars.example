@@ -1,0 +1,5 @@
+# Copy to .dev.vars for local development. Never commit .dev.vars.
+RESEND_API_KEY=
+USPS_CLIENT_ID=
+USPS_CLIENT_SECRET=
+TURNSTILE_SECRET_KEY=

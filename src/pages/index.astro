@@ -1,0 +1,30 @@
+---
+import { asc, eq } from "drizzle-orm";
+import Base from "../layouts/Base.astro";
+import ProductCard from "../components/ProductCard.astro";
+import { getDb, schema } from "../lib/db";
+
+const db = getDb();
+const products = await db
+  .select()
+  .from(schema.products)
+  .where(eq(schema.products.active, true))
+  .orderBy(asc(schema.products.sortOrder));
+---
+
+<Base>
+  <section class="mx-auto max-w-6xl px-4 pt-12 sm:px-6 sm:pt-16">
+    <h1 class="display max-w-3xl text-[2.5rem] sm:text-[3.5rem]">Placeholder headline for Precise Formulations</h1>
+    <p class="mt-4 max-w-xl text-lg text-ink-muted">
+      Placeholder intro. All three products, prices and the order button sit on the first screen.
+    </p>
+  </section>
+
+  <section class="mx-auto mt-10 grid max-w-6xl gap-6 px-4 sm:px-6 md:grid-cols-3">
+    {products.length === 0 ? (
+      <p class="text-ink-muted md:col-span-3">No products yet. Run <code>npm run db:seed:local</code>.</p>
+    ) : (
+      products.map((product) => <ProductCard product={product} />)
+    )}
+  </section>
+</Base>

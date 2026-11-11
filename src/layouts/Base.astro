@@ -1,0 +1,48 @@
+---
+import "../styles/global.css";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = "Precise Formulations",
+  description = "Precise Formulations — order in one click.",
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Libre+Caslon+Display&display=swap"
+    />
+    <title>{title}</title>
+  </head>
+  <body class="min-h-dvh bg-paper text-ink">
+    <header class="border-b border-rule">
+      <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
+        <a href="/" class="text-lg font-semibold tracking-tight">Precise Formulations</a>
+        <a href="/order" class="text-sm font-medium text-ink-muted hover:text-accent">Order</a>
+      </div>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="mt-24 border-t border-rule">
+      <div class="mx-auto max-w-6xl px-4 py-8 text-sm text-ink-muted sm:px-6">
+        © {new Date().getFullYear()} Precise Formulations · US delivery only
+      </div>
+    </footer>
+  </body>
+</html>

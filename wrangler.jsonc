@@ -1,0 +1,33 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "precise-formulations",
+  // Custom entry: Astro's request handler plus the cron handler for payment reminders
+  "main": "./src/worker.ts",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": { "binding": "ASSETS" },
+  "observability": { "enabled": true },
+
+  // Orders and products. Run `npx wrangler d1 create precise-formulations-db`
+  // on the client's account and paste the real database_id here before deploying.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "precise-formulations-db",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "./db/migrations"
+    }
+  ],
+
+  // Checks unpaid orders every 15 minutes and sends reminder emails
+  "triggers": {
+    "crons": ["*/15 * * * *"]
+  },
+
+  // Non-secret config. Secrets (RESEND_API_KEY, USPS_CLIENT_ID, USPS_CLIENT_SECRET,
+  // TURNSTILE_SECRET_KEY) go in .dev.vars locally and `wrangler secret put` in production.
+  "vars": {
+    "STORE_EMAIL_FROM": "orders@preciseformulations.cc",
+    "CLIENT_NOTIFY_EMAIL": "replace-with-client-email@example.com"
+  }
+}

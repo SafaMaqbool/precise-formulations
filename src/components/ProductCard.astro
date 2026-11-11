@@ -1,0 +1,28 @@
+---
+import type { Product } from "../../db/schema";
+import { formatPrice } from "../lib/store-config";
+
+interface Props {
+  product: Product;
+}
+
+const { product } = Astro.props;
+---
+
+<article class="flex flex-col border border-rule bg-paper p-6">
+  <!-- Product image goes here once the client sends photos -->
+  <div class="mb-6 aspect-[4/3] bg-band"></div>
+
+  <h2 class="text-xl font-semibold">{product.name}</h2>
+  {product.tagline && <p class="mt-1 text-ink-muted">{product.tagline}</p>}
+
+  <p class="display mt-4 text-[2.5rem]">{formatPrice(product.priceCents)}</p>
+
+  <dl class="mt-4 text-sm">
+    <div class="ruled-row"><dt class="text-ink-muted">Active ingredients</dt><dd class="text-right">{product.activeIngredients}</dd></div>
+    <div class="ruled-row"><dt class="text-ink-muted">Strength</dt><dd>{product.strength}</dd></div>
+    <div class="ruled-row border-b"><dt class="text-ink-muted">Size</dt><dd>{product.size}</dd></div>
+  </dl>
+
+  <a href={`/order?product=${product.slug}`} class="btn-primary mt-6">Order</a>
+</article>

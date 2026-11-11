@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+/* Design tokens from the brief (Part 2). Use them as Tailwind classes:
+   bg-paper, bg-band, text-ink, text-ink-muted, bg-accent, border-rule, font-display, font-sans */
+@theme {
+  --color-paper: #f4f0e6;
+  --color-band: #ece4d5;
+  --color-ink: #1d1713;
+  --color-ink-muted: #5e5650;
+  --color-accent: #1d3172;
+  --color-accent-ink: #f4f0e6;
+  --color-rule: #1d171326;
+
+  --font-display: "Libre Caslon Display", Georgia, serif;
+  --font-sans: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+
+  /* Square corners and flat surfaces everywhere */
+  --radius-*: initial;
+  --shadow-*: initial;
+}
+
+@layer base {
+  html {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Display face only at 32px and above, per the brief */
+  .display {
+    font-family: var(--font-display);
+    font-weight: 400;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+  }
+
+  ::selection {
+    background: var(--color-accent);
+    color: var(--color-accent-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center bg-accent px-6 py-3 text-base font-semibold text-accent-ink transition-opacity hover:opacity-90;
+  }
+
+  /* Ruled product rows: label left, value right, thin divider */
+  .ruled-row {
+    @apply flex items-baseline justify-between gap-6 border-t border-rule py-3;
+  }
+}
