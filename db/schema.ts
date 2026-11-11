@@ -8,9 +8,13 @@ export const products = sqliteTable("products", {
   slug: text("slug").notNull().unique(),
   name: text("name").notNull(),
   tagline: text("tagline"),
+  // Short label on the bottle and badge, so the two hair serums are easy to tell apart
+  shortLabel: text("short_label"),
   activeIngredients: text("active_ingredients").notNull(),
   strength: text("strength").notNull(),
   size: text("size").notNull(),
+  ingredients: text("ingredients"),
+  preservedWith: text("preserved_with"),
   priceCents: integer("price_cents").notNull(),
   active: integer("active", { mode: "boolean" }).notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),

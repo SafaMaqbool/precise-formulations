@@ -1,0 +1,54 @@
+---
+import type { Product } from "../../db/schema";
+import { formatPrice } from "../lib/store-config";
+
+interface Props {
+  products: Product[];
+}
+
+const { products } = Astro.props;
+const first = products[0];
+---
+
+<form action="/order" method="get" class="mt-8" data-hero-selector>
+  <fieldset>
+    <legend class="sr-only">Choose a serum</legend>
+    <div class="border-t border-ink/80">
+      {products.map((p, i) => (
+        <label class="group flex cursor-pointer items-center gap-4 border-b border-rule px-3 py-3 has-[:checked]:bg-band">
+          <input
+            type="radio"
+            name="product"
+            value={p.slug}
+            checked={i === 0}
+            data-price={formatPrice(p.priceCents)}
+            class="size-4 shrink-0 accent-accent"
+          />
+          <span class="flex-1">
+            <span class="block font-semibold">{p.name}</span>
+            <span class="block text-sm text-ink-muted">{p.tagline}</span>
+          </span>
+          <span class="font-semibold tabular-nums">{formatPrice(p.priceCents)}</span>
+        </label>
+      ))}
+    </div>
+  </fieldset>
+
+  <div class="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3">
+    <button type="submit" class="btn-primary">
+      Order for <span data-hero-price class="ml-1">{first ? formatPrice(first.priceCents) : ""}</span>
+    </button>
+    <p class="text-sm text-ink-muted">Pay by Venmo or Zelle. US delivery only.</p>
+  </div>
+</form>
+
+<script>
+  // Keep the button price in step with the selected serum
+  document.querySelectorAll<HTMLFormElement>("[data-hero-selector]").forEach((form) => {
+    const price = form.querySelector("[data-hero-price]");
+    form.addEventListener("change", (e) => {
+      const input = e.target as HTMLInputElement;
+      if (input.name === "product" && price) price.textContent = input.dataset.price ?? "";
+    });
+  });
+</script>

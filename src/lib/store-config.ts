@@ -15,7 +15,14 @@ export const AGREEMENT_TEXT =
   "I agree to submit payment within 4 hours of submitting my order or risk my order being cancelled. The next page will show payment instructions.";
 
 export function formatPrice(cents: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
+  // Whole-dollar prices show as $35, others as $35.50
+  const whole = cents % 100 === 0;
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: whole ? 0 : 2,
+    maximumFractionDigits: whole ? 0 : 2,
+  }).format(cents / 100);
 }
 
 // PF- followed by 6 characters, without look-alike characters (0/O, 1/I)

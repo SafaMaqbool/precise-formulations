@@ -1,28 +1,52 @@
 ---
 import type { Product } from "../../db/schema";
 import { formatPrice } from "../lib/store-config";
+import Bottle from "./Bottle.astro";
 
 interface Props {
   product: Product;
+  /** Alternate the bottle side on desktop */
+  flip?: boolean;
 }
 
-const { product } = Astro.props;
+const { product, flip = false } = Astro.props;
+
+const rows = [
+  ["Actives", product.activeIngredients],
+  ["Ingredients", product.ingredients ?? "To be confirmed"],
+  ["Preserved with", product.preservedWith ?? "To be confirmed"],
+  ["Size", product.size],
+] as const;
 ---
 
-<article class="flex flex-col border border-rule bg-paper p-6">
-  <!-- Product image goes here once the client sends photos -->
-  <div class="mb-6 aspect-[4/3] bg-band"></div>
+<article id={product.slug} class="grid scroll-mt-8 items-center gap-8 py-12 md:grid-cols-[2fr_3fr] md:gap-16">
+  <div class:list={["flex justify-center bg-band py-10", flip && "md:order-2"]}>
+    <Bottle label={product.shortLabel ?? product.name} class="h-64 w-auto sm:h-72" />
+  </div>
 
-  <h2 class="text-xl font-semibold">{product.name}</h2>
-  {product.tagline && <p class="mt-1 text-ink-muted">{product.tagline}</p>}
+  <div>
+    <div class="flex items-baseline justify-between gap-6 border-t border-ink/80 pt-4">
+      <div>
+        <h3 class="text-xl font-semibold">{product.name}</h3>
+        {product.tagline && <p class="mt-1 text-ink-muted">{product.tagline}</p>}
+      </div>
+      <p class="display text-[2.5rem]">{formatPrice(product.priceCents)}</p>
+    </div>
 
-  <p class="display mt-4 text-[2.5rem]">{formatPrice(product.priceCents)}</p>
+    <dl class="mt-4">
+      {rows.map(([label, value]) => (
+        <div class="grid grid-cols-[8rem_1fr] gap-4 border-t border-rule py-3 sm:grid-cols-[10rem_1fr]">
+          <dt class="text-sm text-ink-muted">{label}</dt>
+          <dd class:list={[value === "To be confirmed" && "text-ink-muted italic"]}>{value}</dd>
+        </div>
+      ))}
+    </dl>
 
-  <dl class="mt-4 text-sm">
-    <div class="ruled-row"><dt class="text-ink-muted">Active ingredients</dt><dd class="text-right">{product.activeIngredients}</dd></div>
-    <div class="ruled-row"><dt class="text-ink-muted">Strength</dt><dd>{product.strength}</dd></div>
-    <div class="ruled-row border-b"><dt class="text-ink-muted">Size</dt><dd>{product.size}</dd></div>
-  </dl>
-
-  <a href={`/order?product=${product.slug}`} class="btn-primary mt-6">Order</a>
+    <a
+      href={`/order?product=${product.slug}`}
+      class="mt-6 inline-block border-b border-ink pb-0.5 font-semibold hover:border-accent hover:text-accent"
+    >
+      Order this serum →
+    </a>
+  </div>
 </article>

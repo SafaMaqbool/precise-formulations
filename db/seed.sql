@@ -1,7 +1,7 @@
--- PLACEHOLDER products. Replace names, ingredients, strength, size and prices
--- once the client sends final product details.
+-- Products as shown in the brief's mockup. Values marked TBC still need the client's confirmation.
+-- Prices are in cents.
 DELETE FROM products;
-INSERT INTO products (slug, name, tagline, active_ingredients, strength, size, price_cents, sort_order) VALUES
-  ('product-one',   'Product One',   'Placeholder tagline', 'Ingredient A, Ingredient B', 'TBC', '30 ml', 0, 1),
-  ('product-two',   'Product Two',   'Placeholder tagline', 'Ingredient C',               'TBC', '30 ml', 0, 2),
-  ('product-three', 'Product Three', 'Placeholder tagline', 'Ingredient D',               'TBC', '30 ml', 0, 3);
+INSERT INTO products (slug, name, tagline, short_label, active_ingredients, strength, size, ingredients, preserved_with, price_cents, sort_order) VALUES
+  ('true-hair-growth-serum',    'True Hair Growth Serum',      'GHK-Cu 6%, AHK-Cu 1%',               'Hair',      'GHK-Cu 6%, AHK-Cu 1%',            'GHK-Cu 6%, AHK-Cu 1%',   '30 ml', 'Sterile water, GHK-Cu, AHK-Cu', '0.5% Liquid Germall Plus', 3500, 1),
+  ('true-hair-growth-serum-ha', 'True Hair Growth Serum + HA', 'Same formula, with hyaluronic acid', 'Hair + HA', 'GHK-Cu 6%, AHK-Cu 1%, hyaluronic acid', 'GHK-Cu 6%, AHK-Cu 1%', '30 ml', NULL,                            NULL,                       3800, 2),
+  ('glass-skin-serum',          'Glass Skin Serum',            'GHK-Cu 3.33%, hyaluronic acid',      'Skin',      'GHK-Cu 3.33%, hyaluronic acid',   'GHK-Cu 3.33%',           '30 ml', NULL,                            NULL,                       3800, 3);

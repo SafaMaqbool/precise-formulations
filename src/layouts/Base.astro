@@ -4,11 +4,14 @@ import "../styles/global.css";
 interface Props {
   title?: string;
   description?: string;
+  /** Checkout uses a simpler header with a back link */
+  variant?: "store" | "checkout";
 }
 
 const {
-  title = "Precise Formulations",
-  description = "Precise Formulations — order in one click.",
+  title = "Precise Formulations — Copper peptide serums",
+  description = "Copper peptide serums for hair and skin, made in the USA. Order in one click and pay by Venmo or Zelle.",
+  variant = "store",
 } = Astro.props;
 ---
 
@@ -28,10 +31,20 @@ const {
     <title>{title}</title>
   </head>
   <body class="min-h-dvh bg-paper text-ink">
-    <header class="border-b border-rule">
-      <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-        <a href="/" class="text-lg font-semibold tracking-tight">Precise Formulations</a>
-        <a href="/order" class="text-sm font-medium text-ink-muted hover:text-accent">Order</a>
+    <header class="border-b border-ink/80">
+      <div class="mx-auto grid max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-4 px-4 py-4 sm:px-6">
+        {variant === "store" ? (
+          <nav class="hidden gap-6 text-sm text-ink-muted md:flex" aria-label="Main">
+            <a href="/#serums" class="hover:text-accent">Serums</a>
+            <a href="/#how-ordering-works" class="hover:text-accent">How ordering works</a>
+          </nav>
+        ) : (
+          <a href="/#serums" class="text-sm text-ink-muted hover:text-accent">← Back to serums</a>
+        )}
+        <a href="/" class="col-start-2 text-lg font-semibold tracking-tight">Precise Formulations</a>
+        {variant === "store" && (
+          <a href="/order" class="justify-self-end text-sm font-medium hover:text-accent">Order</a>
+        )}
       </div>
     </header>
 
@@ -39,9 +52,10 @@ const {
       <slot />
     </main>
 
-    <footer class="mt-24 border-t border-rule">
-      <div class="mx-auto max-w-6xl px-4 py-8 text-sm text-ink-muted sm:px-6">
-        © {new Date().getFullYear()} Precise Formulations · US delivery only
+    <footer class="border-t border-rule">
+      <div class="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-8 text-sm text-ink-muted sm:flex-row sm:justify-between sm:px-6">
+        <span>© {new Date().getFullYear()} Precise Formulations</span>
+        <span>Pay by Venmo or Zelle · US delivery only</span>
       </div>
     </footer>
   </body>

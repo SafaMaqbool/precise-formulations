@@ -1,6 +1,8 @@
 ---
 import { asc, eq } from "drizzle-orm";
 import Base from "../layouts/Base.astro";
+import Bottle from "../components/Bottle.astro";
+import HeroSelector from "../components/HeroSelector.astro";
 import ProductCard from "../components/ProductCard.astro";
 import { getDb, schema } from "../lib/db";
 
@@ -10,21 +12,62 @@ const products = await db
   .from(schema.products)
   .where(eq(schema.products.active, true))
   .orderBy(asc(schema.products.sortOrder));
+
+const steps = [
+  ["Place your order", "Pick your serums and shipping, and tick the payment agreement. It takes under a minute."],
+  ["Pay by Venmo or Zelle", "We email your total and order number. Put only the order number in the payment memo."],
+  ["We ship", "Once payment is matched we confirm your order, then email your tracking number when it ships."],
+] as const;
 ---
 
 <Base>
-  <section class="mx-auto max-w-6xl px-4 pt-12 sm:px-6 sm:pt-16">
-    <h1 class="display max-w-3xl text-[2.5rem] sm:text-[3.5rem]">Placeholder headline for Precise Formulations</h1>
-    <p class="mt-4 max-w-xl text-lg text-ink-muted">
-      Placeholder intro. All three products, prices and the order button sit on the first screen.
-    </p>
-  </section>
+  {products.length === 0 ? (
+    <section class="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+      <p class="text-ink-muted">No products yet. Run <code>bun run db:seed:local</code>.</p>
+    </section>
+  ) : (
+    <>
+      <!-- Hero: every product, price and the order button on the first screen -->
+      <section class="mx-auto grid max-w-6xl items-center gap-10 px-4 pt-10 pb-12 sm:px-6 md:grid-cols-[3fr_2fr] md:pt-16 md:pb-20">
+        <div>
+          <h1 class="display text-[2.75rem] sm:text-[3.5rem]">
+            The strength<br />is on the label
+          </h1>
+          <p class="mt-4 max-w-md text-lg text-ink-muted">
+            Copper peptide serums for hair and skin, made in the USA.
+          </p>
+          <HeroSelector products={products} />
+        </div>
 
-  <section class="mx-auto mt-10 grid max-w-6xl gap-6 px-4 sm:px-6 md:grid-cols-3">
-    {products.length === 0 ? (
-      <p class="text-ink-muted md:col-span-3">No products yet. Run <code>npm run db:seed:local</code>.</p>
-    ) : (
-      products.map((product) => <ProductCard product={product} />)
-    )}
-  </section>
+        <div class="hidden justify-center md:flex">
+          <Bottle label={products[0].shortLabel ?? products[0].name} class="h-[26rem] w-auto" />
+        </div>
+      </section>
+
+      <!-- Product details -->
+      <section id="serums" class="scroll-mt-4 border-t border-rule">
+        <div class="mx-auto max-w-6xl px-4 pt-16 sm:px-6">
+          <h2 class="display text-[2.25rem] sm:text-[2.75rem]">Three serums, 30 ml each</h2>
+          {products.map((product, i) => <ProductCard product={product} flip={i % 2 === 1} />)}
+        </div>
+      </section>
+
+      <!-- How ordering works -->
+      <section id="how-ordering-works" class="scroll-mt-4 bg-band">
+        <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+          <h2 class="display text-[2.25rem] sm:text-[2.75rem]">How ordering works</h2>
+          <ol class="mt-10 grid gap-8 md:grid-cols-3">
+            {steps.map(([title, body], i) => (
+              <li class="border-t border-ink/80 pt-4">
+                <p class="text-sm font-semibold text-accent">Step {i + 1}</p>
+                <h3 class="mt-2 text-xl font-semibold">{title}</h3>
+                <p class="mt-2 text-ink-muted">{body}</p>
+              </li>
+            ))}
+          </ol>
+          <a href="/order" class="btn-primary mt-10">Start your order</a>
+        </div>
+      </section>
+    </>
+  )}
 </Base>

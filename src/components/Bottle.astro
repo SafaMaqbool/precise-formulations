@@ -1,0 +1,36 @@
+---
+// Placeholder dropper bottle until the client's product photos or the 3D bottle arrive.
+// `label` prints on the bottle so the three serums are easy to tell apart.
+interface Props {
+  label: string;
+  class?: string;
+}
+
+const { label, class: className = "" } = Astro.props;
+---
+
+<svg
+  viewBox="0 0 160 360"
+  class={className}
+  role="img"
+  aria-label={`${label} serum bottle`}
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <!-- dropper bulb -->
+  <rect x="62" y="8" width="36" height="64" fill="#f4f0e6" stroke="#d9cfbd" />
+  <!-- gold collar -->
+  <rect x="50" y="72" width="60" height="58" fill="#b48a3c" />
+  <rect x="50" y="72" width="12" height="58" fill="#cfa557" />
+  <!-- neck -->
+  <rect x="58" y="130" width="44" height="14" fill="#16285e" />
+  <!-- body -->
+  <path d="M20 168 Q20 144 58 144 H102 Q140 144 140 168 V340 Q140 352 128 352 H32 Q20 352 20 340 Z" fill="#1d3172" />
+  <rect x="26" y="160" width="10" height="180" fill="#ffffff" opacity="0.12" />
+  <!-- label -->
+  <rect x="32" y="206" width="96" height="112" fill="#f4f0e6" />
+  <text x="80" y="228" text-anchor="middle" font-family="Hanken Grotesk, sans-serif" font-size="8" letter-spacing="1.2" fill="#5e5650">PRECISE</text>
+  <text x="80" y="240" text-anchor="middle" font-family="Hanken Grotesk, sans-serif" font-size="8" letter-spacing="1.2" fill="#5e5650">FORMULATIONS</text>
+  <line x1="44" y1="248" x2="116" y2="248" stroke="#1d171326" />
+  <text x="80" y="276" text-anchor="middle" font-family="Hanken Grotesk, sans-serif" font-size="15" font-weight="600" fill="#1d3172">{label}</text>
+  <text x="80" y="300" text-anchor="middle" font-family="Hanken Grotesk, sans-serif" font-size="9" fill="#5e5650">30 ml</text>
+</svg>
