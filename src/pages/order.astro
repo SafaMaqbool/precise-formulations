@@ -1,13 +1,37 @@
 ---
+import { asc, eq } from "drizzle-orm";
 import Base from "../layouts/Base.astro";
+import CheckoutForm from "../components/checkout/CheckoutForm";
+import { getDb, schema } from "../lib/db";
+import { AGREEMENT_TEXT, BOTTLE_LIMIT, SHIPPING_RATES } from "../lib/store-config";
+import { US_STATES } from "../lib/us-states";
 
-// Phase 3: checkout. ?product=<slug> pre-fills the order from the homepage button.
+// ?product=<slug> pre-selects one bottle of that serum (from the homepage buttons)
 const preselected = Astro.url.searchParams.get("product");
+
+const products = await getDb()
+  .select({
+    slug: schema.products.slug,
+    name: schema.products.name,
+    shortLabel: schema.products.shortLabel,
+    priceCents: schema.products.priceCents,
+  })
+  .from(schema.products)
+  .where(eq(schema.products.active, true))
+  .orderBy(asc(schema.products.sortOrder));
 ---
 
 <Base title="Your order — Precise Formulations" variant="checkout">
-  <section class="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-    <h1 class="display text-[2.5rem]">Order</h1>
-    <p class="mt-4 text-ink-muted">Checkout is built in Phase 3. Pre-selected product: {preselected ?? "none"}</p>
+  <section class="mx-auto max-w-6xl px-4 pt-10 sm:px-6 lg:pb-16">
+    <h1 class="display mb-8 text-[2.5rem] sm:text-[3rem]">Your order</h1>
+    <CheckoutForm
+      client:load
+      products={products}
+      preselected={preselected}
+      shippingRates={SHIPPING_RATES}
+      bottleLimit={BOTTLE_LIMIT}
+      agreementText={AGREEMENT_TEXT}
+      states={US_STATES}
+    />
   </section>
 </Base>

@@ -1,0 +1,80 @@
+---
+import { eq } from "drizzle-orm";
+import { env } from "cloudflare:workers";
+import Base from "../../layouts/Base.astro";
+import { getDb, schema } from "../../lib/db";
+import { SHIPPING_RATES, formatPrice } from "../../lib/store-config";
+
+// Payment instructions. Venmo and Zelle details live in secrets and appear only here,
+// after an order is placed, never in the public site code.
+const orderNumber = (Astro.params.orderNumber ?? "").toUpperCase();
+if (!/^PF-[A-Z0-9]{6}$/.test(orderNumber)) return Astro.redirect("/");
+
+const db = getDb();
+const [order] = await db.select().from(schema.orders).where(eq(schema.orders.orderNumber, orderNumber)).limit(1);
+if (!order) return Astro.redirect("/");
+
+const items = await db
+  .select({ name: schema.products.name, quantity: schema.orderItems.quantity, unitPriceCents: schema.orderItems.unitPriceCents })
+  .from(schema.orderItems)
+  .innerJoin(schema.products, eq(schema.orderItems.productId, schema.products.id))
+  .where(eq(schema.orderItems.orderId, order.id));
+
+const { VENMO_HANDLE, ZELLE_CONTACT } = env as unknown as { VENMO_HANDLE?: string; ZELLE_CONTACT?: string };
+const venmo = VENMO_HANDLE || "Venmo handle not set";
+const zelle = ZELLE_CONTACT || "Zelle contact not set";
+---
+
+<Base title={`Pay for ${order.orderNumber} — Precise Formulations`} variant="checkout">
+  <section class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <p class="text-sm font-semibold text-accent">Order received</p>
+    <h1 class="display mt-2 text-[2.5rem] sm:text-[3rem]">Send {formatPrice(order.totalCents)} to complete your order</h1>
+    <p class="mt-4 text-lg text-ink-muted">
+      We've emailed these instructions to {order.email}. Please pay within 4 hours or your order may be cancelled.
+    </p>
+
+    <div class="mt-8 bg-band p-6">
+      <p class="text-sm text-ink-muted">Put only this in the payment memo</p>
+      <p class="mt-1 text-3xl font-semibold tracking-wide">{order.orderNumber}</p>
+
+      <div class="mt-6 grid gap-4 sm:grid-cols-2">
+        <div class="border-t border-ink/80 pt-3">
+          <p class="font-semibold">Venmo</p>
+          <p class="mt-1 text-lg">{venmo}</p>
+        </div>
+        <div class="border-t border-ink/80 pt-3">
+          <p class="font-semibold">Zelle</p>
+          <p class="mt-1 text-lg">{zelle}</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="mt-10 text-lg font-semibold">Order summary</h2>
+    <dl class="mt-3">
+      {items.map((i) => (
+        <div class="ruled-row">
+          <dt>{i.name} × {i.quantity}</dt>
+          <dd class="tabular-nums">{formatPrice(i.unitPriceCents * i.quantity)}</dd>
+        </div>
+      ))}
+      <div class="ruled-row">
+        <dt>{SHIPPING_RATES[order.shippingMethod].label} shipping ({SHIPPING_RATES[order.shippingMethod].eta})</dt>
+        <dd class="tabular-nums">{formatPrice(order.shippingCents)}</dd>
+      </div>
+      <div class="ruled-row border-b font-semibold">
+        <dt>Total</dt>
+        <dd class="tabular-nums">{formatPrice(order.totalCents)}</dd>
+      </div>
+    </dl>
+
+    <h2 class="mt-10 text-lg font-semibold">What happens next</h2>
+    <ol class="mt-3 list-decimal space-y-2 pl-5 text-ink-muted">
+      <li>We match your payment to order {order.orderNumber} and email you a confirmation.</li>
+      <li>We email your tracking number when your order ships.</li>
+    </ol>
+
+    <p class="mt-8 text-sm text-ink-muted">
+      Shipping to {order.customerName}, {order.addressLine1}{order.addressLine2 ? `, ${order.addressLine2}` : ""}, {order.city}, {order.state} {order.zip}
+    </p>
+  </section>
+</Base>
