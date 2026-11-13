@@ -28,6 +28,9 @@
   // TURNSTILE_SECRET_KEY) go in .dev.vars locally and `wrangler secret put` in production.
   "vars": {
     "STORE_EMAIL_FROM": "orders@preciseformulations.cc",
-    "CLIENT_NOTIFY_EMAIL": "replace-with-client-email@example.com"
+    "CLIENT_NOTIFY_EMAIL": "replace-with-client-email@example.com",
+    // Cloudflare Access for the admin portal: team domain and the app's Audience (AUD) tag
+    "ACCESS_TEAM_DOMAIN": "replace-with-team.cloudflareaccess.com",
+    "ACCESS_AUD": "replace-with-access-aud-tag"
   }
 }

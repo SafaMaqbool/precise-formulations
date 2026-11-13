@@ -73,6 +73,18 @@ To test reminders locally, run `bun run preview`, then trigger the cron:
 curl -X POST "http://localhost:8787/cdn-cgi/local/explorer/api/local/scheduled?worker=precise-formulations" -H "content-type: application/json" -d '{"cron":"*/15 * * * *"}'
 ```
 
+## Admin portal
+
+`/admin` lists orders with status tabs and search. Each order page has the next step: **Mark as paid**, **Mark as shipped** (with tracking number), **Cancel** (unpaid only) and tracking corrections. Each action emails the customer, and an action only applies if the order is still in the expected status, so double clicks are safe.
+
+Locally the admin opens without sign-in. In production every `/admin` and `/api/admin` request must carry a valid Cloudflare Access token (checked in `src/middleware.ts`); until Access is set up, the admin returns 403.
+
+Setting up Access at launch:
+
+1. In Cloudflare Zero Trust, create a self-hosted Access application for `preciseformulations.cc/admin*` and `preciseformulations.cc/api/admin*`, with a policy allowing the client's email (one-time PIN login is fine).
+2. Copy the team domain (e.g. `precise.cloudflareaccess.com`) and the application's **Audience (AUD) tag** into `ACCESS_TEAM_DOMAIN` and `ACCESS_AUD` in `wrangler.jsonc`.
+3. Deploy, then open `/admin` in a private window to check that sign-in is required.
+
 ## Waiting on the client
 
 Values in `src/lib/store-config.ts` and `db/seed.sql` are placeholders until these are confirmed:
@@ -81,6 +93,7 @@ Values in `src/lib/store-config.ts` and `db/seed.sql` are placeholders until the
 - Exact reminder timings (first one is 30 minutes)
 - Shipping carrier for tracking links (assumed USPS)
 - Wording of the current site's emails
+- The client's time zone for admin dates (`ADMIN_TIMEZONE`, assumed New York)
 - Final product names, prices, ingredients, strength, size and images
 
 ## Before the first deploy

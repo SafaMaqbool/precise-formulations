@@ -1,11 +1,100 @@
 ---
-import Base from "../../layouts/Base.astro";
-// Phase 5: admin portal. Protected by Cloudflare Access in production (no login code here).
+import Admin from "../../layouts/Admin.astro";
+import StatusBadge from "../../components/admin/StatusBadge.astro";
+import { listOrders } from "../../lib/admin-orders";
+import { formatAdminDate, formatPrice, ADMIN_TIMEZONE } from "../../lib/store-config";
+import type { OrderStatus } from "../../../db/schema";
+
+const status = Astro.url.searchParams.get("status");
+const q = Astro.url.searchParams.get("q") ?? "";
+const { orders, counts, truncated } = await listOrders({ status, q });
+
+const tabs: { key: OrderStatus | null; label: string }[] = [
+  { key: null, label: "All" },
+  { key: "pending", label: "Awaiting payment" },
+  { key: "paid", label: "Paid, to ship" },
+  { key: "shipped", label: "Shipped" },
+  { key: "cancelled", label: "Cancelled" },
+];
+const total = Object.values(counts).reduce((a, b) => a + (b ?? 0), 0);
+const tabHref = (key: string | null) => {
+  const p = new URLSearchParams();
+  if (key) p.set("status", key);
+  if (q) p.set("q", q);
+  return `/admin${p.size ? `?${p}` : ""}`;
+};
+const tz = ADMIN_TIMEZONE.split("/").pop()?.replace("_", " ");
 ---
 
-<Base title="Admin — Precise Formulations">
-  <section class="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+<Admin title="Orders">
+  <div class="flex flex-wrap items-end justify-between gap-4">
     <h1 class="display text-[2.5rem]">Orders</h1>
-    <p class="mt-4 text-ink-muted">Admin portal is built in Phase 5.</p>
-  </section>
-</Base>
+    <form method="get" action="/admin" class="flex w-full gap-2 sm:w-auto">
+      {status && <input type="hidden" name="status" value={status} />}
+      <input
+        type="search"
+        name="q"
+        value={q}
+        placeholder="Order number, email or name"
+        class="w-full border border-ink/30 bg-paper px-3 py-2 outline-none focus:border-accent sm:w-72"
+      />
+      <button class="border border-ink px-4 py-2 font-semibold">Search</button>
+    </form>
+  </div>
+
+  <nav class="mt-6 flex gap-1 overflow-x-auto border-b border-rule" aria-label="Filter by status">
+    {tabs.map((t) => {
+      const active = (status ?? null) === t.key;
+      const n = t.key ? (counts[t.key] ?? 0) : total;
+      return (
+        <a
+          href={tabHref(t.key)}
+          class:list={["-mb-px border-b-2 px-3 py-2 text-sm whitespace-nowrap", active ? "border-accent font-semibold text-ink" : "border-transparent text-ink-muted hover:text-ink"]}
+        >
+          {t.label} <span class="tabular-nums text-ink-muted">({n})</span>
+        </a>
+      );
+    })}
+  </nav>
+
+  {orders.length === 0 ? (
+    <p class="py-16 text-center text-ink-muted">{q ? `No orders match "${q}".` : "No orders here yet."}</p>
+  ) : (
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[720px] text-sm">
+        <thead>
+          <tr class="border-b border-ink/80 text-left text-ink-muted">
+            <th class="py-3 pr-4 font-medium">Order</th>
+            <th class="py-3 pr-4 font-medium">Placed ({tz})</th>
+            <th class="py-3 pr-4 font-medium">Customer</th>
+            <th class="py-3 pr-4 text-right font-medium">Bottles</th>
+            <th class="py-3 pr-4 text-right font-medium">Total</th>
+            <th class="py-3 font-medium">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {orders.map((o) => (
+            <tr class="border-b border-rule hover:bg-band/60">
+              <td class="py-3 pr-4">
+                <a href={`/admin/orders/${o.orderNumber}`} class="font-semibold tracking-wide text-accent hover:underline">{o.orderNumber}</a>
+              </td>
+              <td class="py-3 pr-4 whitespace-nowrap">{formatAdminDate(o.createdAt)}</td>
+              <td class="py-3 pr-4">
+                <span class="block">{o.customerName}</span>
+                <span class="block text-ink-muted">{o.email}</span>
+              </td>
+              <td class="py-3 pr-4 text-right tabular-nums">{o.bottles}</td>
+              <td class="py-3 pr-4 text-right font-semibold tabular-nums">{formatPrice(o.totalCents)}</td>
+              <td class="py-3">
+                <StatusBadge status={o.status} />
+                {!o.addressVerified && o.status !== "cancelled" && <span class="ml-2 text-xs text-ink-muted" title="Address not verified">⚠ address</span>}
+                {o.status === "pending" && o.remindersSent > 0 && <span class="ml-2 text-xs text-ink-muted">{o.remindersSent} reminder{o.remindersSent > 1 ? "s" : ""} sent</span>}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {truncated && <p class="mt-4 text-sm text-ink-muted">Showing the 200 most recent. Search to find older orders.</p>}
+    </div>
+  )}
+</Admin>

@@ -15,6 +15,20 @@ export const REMINDER_DELAYS_MINUTES = [30, 60 * 24, 60 * 48];
 export const TRACKING_URL = (trackingNumber: string) =>
   `https://tools.usps.com/go/TrackConfirmAction?tLabels=${encodeURIComponent(trackingNumber)}`;
 
+// PENDING: the client's time zone, used for dates in the admin portal
+export const ADMIN_TIMEZONE = "America/New_York";
+
+export function formatAdminDate(date: Date | null | undefined) {
+  if (!date) return "";
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: ADMIN_TIMEZONE,
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}
+
 export const AGREEMENT_TEXT =
   "I agree to submit payment within 4 hours of submitting my order or risk my order being cancelled. The next page will show payment instructions.";
 

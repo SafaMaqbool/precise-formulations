@@ -73,7 +73,7 @@ export async function sendOrderPlacedEmails(order: Order) {
           to: clientEmail,
           subject: `New order ${order.orderNumber}: ${data.total} from ${order.customerName}`,
           idempotencyKey: `order-alert/${order.orderNumber}`,
-          react: createElement(NewOrderNotificationEmail, { order: data, adminUrl: `${SITE}/admin` }),
+          react: createElement(NewOrderNotificationEmail, { order: data, adminUrl: `${SITE}/admin/orders/${order.orderNumber}` }),
           replyTo: order.email,
         }),
       );

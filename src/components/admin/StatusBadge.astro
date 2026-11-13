@@ -1,0 +1,25 @@
+---
+import type { OrderStatus } from "../../../db/schema";
+
+interface Props {
+  status: OrderStatus;
+}
+
+const { status } = Astro.props;
+
+// Pending needs action, so it stands out; finished states stay quiet
+const styles: Record<OrderStatus, string> = {
+  pending: "bg-accent text-accent-ink",
+  paid: "border border-accent text-accent",
+  shipped: "bg-band text-ink",
+  cancelled: "text-ink-muted line-through",
+};
+const labels: Record<OrderStatus, string> = {
+  pending: "Awaiting payment",
+  paid: "Paid, to ship",
+  shipped: "Shipped",
+  cancelled: "Cancelled",
+};
+---
+
+<span class:list={["inline-block px-2 py-0.5 text-xs font-semibold whitespace-nowrap", styles[status]]}>{labels[status]}</span>
