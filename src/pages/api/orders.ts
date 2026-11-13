@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { verifyAddress } from "../../lib/address";
 import { OrderError, createOrder, parseOrderInput } from "../../lib/orders";
+import { sendOrderPlacedEmails } from "../../lib/notifications";
 
 /**
  * Places an order.
@@ -39,6 +40,8 @@ export const POST: APIRoute = async ({ request }) => {
 
   try {
     const order = await createOrder(input, addressVerified);
+    // Order received (customer) + new order alert (client). A failed email doesn't fail the order.
+    await sendOrderPlacedEmails(order);
     return Response.json({ status: "created", orderNumber: order.orderNumber });
   } catch (err) {
     if (err instanceof OrderError) {

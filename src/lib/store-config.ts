@@ -11,6 +11,10 @@ export const BOTTLE_LIMIT = { mode: "per-order" as "per-order" | "per-product", 
 // PENDING: real timings from the current system. First reminder is 30 minutes (confirmed).
 export const REMINDER_DELAYS_MINUTES = [30, 60 * 24, 60 * 48];
 
+// PENDING: confirm the carrier. Assumes USPS, since addresses are checked against USPS.
+export const TRACKING_URL = (trackingNumber: string) =>
+  `https://tools.usps.com/go/TrackConfirmAction?tLabels=${encodeURIComponent(trackingNumber)}`;
+
 export const AGREEMENT_TEXT =
   "I agree to submit payment within 4 hours of submitting my order or risk my order being cancelled. The next page will show payment instructions.";
 

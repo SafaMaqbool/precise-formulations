@@ -114,7 +114,6 @@ export async function createOrder(input: OrderInput, addressVerified: boolean) {
         throw err;
       }
 
-      // TODO (Phase 4): send the order received email and notify the client
       return order;
     } catch (err) {
       if (String(err).includes("UNIQUE") && String(err).includes("order_number")) continue;

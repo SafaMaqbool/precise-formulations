@@ -17,6 +17,8 @@
   "dependencies": {
     "@astrojs/cloudflare": "^14.4.6",
     "@astrojs/react": "^7.1.5",
+    "@react-email/components": "^1.0.12",
+    "@react-email/render": "^2.3.1",
     "@tailwindcss/vite": "^4.3.5",
     "astro": "^7.4.8",
     "drizzle-orm": "^0.45.4",

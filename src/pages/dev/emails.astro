@@ -1,0 +1,72 @@
+---
+// Local preview of every email with sample data. Not available on the live site.
+import { createElement } from "react";
+import { render } from "@react-email/render";
+import {
+  NewOrderNotificationEmail,
+  OrderCancelledEmail,
+  OrderConfirmedEmail,
+  OrderReceivedEmail,
+  OrderShippedEmail,
+  PaymentReminderEmail,
+} from "../../emails/templates";
+import type { EmailOrder } from "../../emails/types";
+import { paymentDetails } from "../../lib/notifications";
+import { TRACKING_URL } from "../../lib/store-config";
+
+if (!import.meta.env.DEV) return new Response(null, { status: 404 });
+
+const order: EmailOrder = {
+  orderNumber: "PF-JXFC9F",
+  customerName: "Test Person",
+  email: "test@example.com",
+  items: [
+    { name: "True Hair Growth Serum", quantity: 1, lineTotal: "$35" },
+    { name: "Glass Skin Serum", quantity: 1, lineTotal: "$38" },
+  ],
+  subtotal: "$73",
+  shipping: "$8",
+  shippingLabel: "Standard",
+  total: "$81",
+  addressLines: ["12 MAIN ST APT 5", "TESTVILLE, NY 10001"],
+  addressVerified: true,
+  trackingNumber: "9400111899223197428490",
+  trackingUrl: TRACKING_URL("9400111899223197428490"),
+};
+const payment = paymentDetails();
+
+const emails = [
+  ["Order received", createElement(OrderReceivedEmail, { order, payment })],
+  ["Reminder 1 of 3", createElement(PaymentReminderEmail, { order, payment, reminder: 1, totalReminders: 3 })],
+  ["Reminder 3 of 3", createElement(PaymentReminderEmail, { order, payment, reminder: 3, totalReminders: 3 })],
+  ["Order confirmed", createElement(OrderConfirmedEmail, { order })],
+  ["Order shipped", createElement(OrderShippedEmail, { order })],
+  ["Order cancelled", createElement(OrderCancelledEmail, { order })],
+  ["New order (to client)", createElement(NewOrderNotificationEmail, { order: { ...order, addressVerified: false }, adminUrl: "/admin" })],
+] as const;
+
+const rendered = await Promise.all(emails.map(async ([name, el]) => ({ name, html: await render(el) })));
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Email previews</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 24px; background: #fff; color: #1d1713; }
+      nav a { margin-right: 12px; }
+      section { margin: 32px 0; }
+      iframe { width: 100%; max-width: 640px; height: 900px; border: 1px solid #ccc; }
+    </style>
+  </head>
+  <body>
+    <h1>Email previews</h1>
+    <nav>{rendered.map((e, i) => <a href={`#e${i}`}>{e.name}</a>)}</nav>
+    {rendered.map((e, i) => (
+      <section id={`e${i}`}>
+        <h2>{e.name}</h2>
+        <iframe srcdoc={e.html} title={e.name}></iframe>
+      </section>
+    ))}
+  </body>
+</html>

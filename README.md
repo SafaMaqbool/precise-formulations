@@ -57,12 +57,30 @@ src/
   emails/              React Email templates (Phase 4)
 ```
 
+## Emails
+
+Templates are in `src/emails/templates.tsx` and are sent through Resend from `src/lib/notifications.ts`:
+
+- Order received (customer) and new order alert (client), when an order is placed
+- Payment reminders, from the cron in `src/lib/reminders.ts`
+- Confirmed, shipped and cancelled, sent by the admin portal through `sendStatusEmail`
+
+Without `RESEND_API_KEY` in `.dev.vars`, nothing is sent: each email is logged in the terminal instead. Preview every email at `http://localhost:4321/dev/emails` (local only). The wording is placeholder until the client sends the current site's emails.
+
+To test reminders locally, run `bun run preview`, then trigger the cron:
+
+```bash
+curl -X POST "http://localhost:8787/cdn-cgi/local/explorer/api/local/scheduled?worker=precise-formulations" -H "content-type: application/json" -d '{"cron":"*/15 * * * *"}'
+```
+
 ## Waiting on the client
 
 Values in `src/lib/store-config.ts` and `db/seed.sql` are placeholders until these are confirmed:
 
 - Bottle limit: 4 per order, or 4 of each product
 - Exact reminder timings (first one is 30 minutes)
+- Shipping carrier for tracking links (assumed USPS)
+- Wording of the current site's emails
 - Final product names, prices, ingredients, strength, size and images
 
 ## Before the first deploy
