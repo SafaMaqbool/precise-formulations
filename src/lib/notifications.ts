@@ -62,6 +62,7 @@ export async function sendOrderPlacedEmails(order: Order) {
       await sendEmail({
         to: order.email,
         subject: `Order ${order.orderNumber}: send ${data.total} to complete your order`,
+        idempotencyKey: `order-received/${order.orderNumber}`,
         react: createElement(OrderReceivedEmail, { order: data, payment: paymentDetails() }),
       }),
     ];
@@ -71,6 +72,7 @@ export async function sendOrderPlacedEmails(order: Order) {
         await sendEmail({
           to: clientEmail,
           subject: `New order ${order.orderNumber}: ${data.total} from ${order.customerName}`,
+          idempotencyKey: `order-alert/${order.orderNumber}`,
           react: createElement(NewOrderNotificationEmail, { order: data, adminUrl: `${SITE}/admin` }),
           replyTo: order.email,
         }),
@@ -88,6 +90,7 @@ export async function sendPaymentReminder(order: Order, reminder: number) {
   const result = await sendEmail({
     to: order.email,
     subject: `Reminder: payment for order ${order.orderNumber}`,
+    idempotencyKey: `payment-reminder-${reminder}/${order.orderNumber}`,
     react: createElement(PaymentReminderEmail, {
       order: data,
       payment: paymentDetails(),
@@ -106,6 +109,8 @@ export async function sendStatusEmail(order: Order, kind: "confirmed" | "shipped
     shipped: { subject: `Order ${order.orderNumber} has shipped`, react: createElement(OrderShippedEmail, { order: data }) },
     cancelled: { subject: `Order ${order.orderNumber} has been cancelled`, react: createElement(OrderCancelledEmail, { order: data }) },
   }[kind];
-  const result = await sendEmail({ to: order.email, ...email });
+  // Tracking number is part of the key so a corrected tracking number can be re-sent
+  const idempotencyKey = `order-${kind}/${order.orderNumber}${kind === "shipped" ? `/${order.trackingNumber ?? ""}` : ""}`;
+  const result = await sendEmail({ to: order.email, ...email, idempotencyKey });
   return result.ok;
 }
