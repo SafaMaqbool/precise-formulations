@@ -31,6 +31,8 @@
     "CLIENT_NOTIFY_EMAIL": "replace-with-client-email@example.com",
     // Cloudflare Access for the admin portal: team domain and the app's Audience (AUD) tag
     "ACCESS_TEAM_DOMAIN": "replace-with-team.cloudflareaccess.com",
-    "ACCESS_AUD": "replace-with-access-aud-tag"
+    "ACCESS_AUD": "replace-with-access-aud-tag",
+    // Turnstile widget on checkout (public). The matching secret goes in TURNSTILE_SECRET_KEY.
+    "TURNSTILE_SITE_KEY": "replace-with-turnstile-site-key"
   }
 }

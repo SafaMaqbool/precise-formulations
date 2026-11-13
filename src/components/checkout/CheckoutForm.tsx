@@ -1,4 +1,32 @@
-import { useMemo, useState, type SubmitEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type SubmitEvent } from "react";
+
+// Cloudflare Turnstile browser API (loaded from challenges.cloudflare.com)
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (el: HTMLElement, opts: Record<string, unknown>) => string;
+      reset: (id: string) => void;
+      remove: (id: string) => void;
+    };
+  }
+}
+
+const TURNSTILE_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+
+function loadTurnstile(): Promise<NonNullable<Window["turnstile"]>> {
+  return new Promise((resolve, reject) => {
+    if (window.turnstile) return resolve(window.turnstile);
+    let script = document.querySelector<HTMLScriptElement>(`script[src="${TURNSTILE_SRC}"]`);
+    if (!script) {
+      script = document.createElement("script");
+      script.src = TURNSTILE_SRC;
+      script.async = true;
+      document.head.appendChild(script);
+    }
+    script.addEventListener("load", () => (window.turnstile ? resolve(window.turnstile) : reject(new Error("Turnstile missing"))));
+    script.addEventListener("error", () => reject(new Error("Turnstile failed to load")));
+  });
+}
 
 interface CheckoutProduct {
   slug: string;
@@ -28,6 +56,8 @@ interface Props {
   bottleLimit: { mode: "per-order" | "per-product"; max: number };
   agreementText: string;
   states: readonly (readonly [string, string])[];
+  /** Turnstile site key; null when spam protection isn't set up */
+  turnstileSiteKey: string | null;
 }
 
 type Errors = Partial<Record<string, string>>;
@@ -39,7 +69,7 @@ const money = (cents: number) =>
     minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
   }).format(cents / 100);
 
-export default function CheckoutForm({ products, preselected, shippingRates, bottleLimit, agreementText, states }: Props) {
+export default function CheckoutForm({ products, preselected, shippingRates, bottleLimit, agreementText, states, turnstileSiteKey }: Props) {
   const firstSlug = products.some((p) => p.slug === preselected) ? preselected! : products[0]?.slug;
 
   const [qty, setQty] = useState<Record<string, number>>(() =>
@@ -60,6 +90,49 @@ export default function CheckoutForm({ products, preselected, shippingRates, bot
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [suggestion, setSuggestion] = useState<Address | null>(null);
+
+  // Spam protection: a one-time token from the widget, then a short-lived ticket from the server
+  const widgetRef = useRef<HTMLDivElement>(null);
+  const widgetId = useRef<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [ticket, setTicket] = useState<string | null>(null);
+  const [humanError, setHumanError] = useState(false);
+  const needsCheck = Boolean(turnstileSiteKey) && !token && !ticket;
+
+  useEffect(() => {
+    if (!turnstileSiteKey || !widgetRef.current) return;
+    let cancelled = false;
+    loadTurnstile()
+      .then((ts) => {
+        if (cancelled || !widgetRef.current || widgetId.current) return;
+        widgetId.current = ts.render(widgetRef.current, {
+          sitekey: turnstileSiteKey,
+          size: "flexible",
+          theme: "light",
+          callback: (t: string) => {
+            setToken(t);
+            setHumanError(false);
+          },
+          "expired-callback": () => setToken(null),
+          "error-callback": () => {
+            setToken(null);
+            setHumanError(true);
+          },
+        });
+      })
+      .catch(() => setHumanError(true));
+    return () => {
+      cancelled = true;
+      if (widgetId.current && window.turnstile) window.turnstile.remove(widgetId.current);
+      widgetId.current = null;
+    };
+  }, [turnstileSiteKey]);
+
+  // Tokens work once: after sending one, get a fresh token for the next attempt
+  const resetWidget = () => {
+    setToken(null);
+    if (widgetId.current && window.turnstile) window.turnstile.reset(widgetId.current);
+  };
 
   const totalBottles = Object.values(qty).reduce((a, b) => a + b, 0);
   const subtotal = products.reduce((sum, p) => sum + p.priceCents * (qty[p.slug] ?? 0), 0);
@@ -97,11 +170,12 @@ export default function CheckoutForm({ products, preselected, shippingRates, bot
   async function submit(extra: Record<string, unknown> = {}, override?: Address) {
     setSubmitting(true);
     setFormError("");
+    const sentToken = token;
     try {
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...payload, ...override, ...extra }),
+        body: JSON.stringify({ ...payload, ...override, ...extra, turnstileToken: sentToken, ticket }),
       });
       const data = (await res.json()) as {
         status: string;
@@ -109,7 +183,13 @@ export default function CheckoutForm({ products, preselected, shippingRates, bot
         suggested?: Address;
         errors?: Errors;
         message?: string;
+        ticket?: string;
       };
+      if (data.status !== "created") {
+        if (data.ticket) setTicket(data.ticket);
+        if (sentToken) resetWidget();
+        if (res.status === 403) setTicket(null);
+      }
 
       if (data.status === "created") {
         window.location.href = `/order/${data.orderNumber}`;
@@ -240,8 +320,13 @@ export default function CheckoutForm({ products, preselected, shippingRates, bot
         </label>
         {errors.agreed && <p className="mt-2 text-sm text-red-700">{errors.agreed}</p>}
 
-        <button type="submit" disabled={submitting || totalBottles === 0} className="btn-primary mt-5 w-full disabled:opacity-60">
-          {submitting ? "Placing order…" : "Place order"}
+        {turnstileSiteKey && <div ref={widgetRef} className="mt-5 min-h-[65px]" />}
+        {humanError && (
+          <p className="mt-2 text-sm text-red-700">The security check couldn't load. Please refresh the page or try another browser.</p>
+        )}
+
+        <button type="submit" disabled={submitting || totalBottles === 0 || needsCheck} className="btn-primary mt-5 w-full disabled:opacity-60">
+          {submitting ? "Placing order…" : needsCheck ? "Checking you're human…" : "Place order"}
         </button>
         {formError && <p className="mt-3 text-sm text-red-700" role="alert">{formError}</p>}
       </aside>
@@ -271,10 +356,10 @@ export default function CheckoutForm({ products, preselected, shippingRates, bot
               </div>
             </div>
             <div className="mt-6 flex flex-wrap gap-3">
-              <button type="button" onClick={useSuggested} disabled={submitting} className="btn-primary disabled:opacity-60">
+              <button type="button" onClick={useSuggested} disabled={submitting || needsCheck} className="btn-primary disabled:opacity-60">
                 {submitting ? "Placing order…" : "Use suggested"}
               </button>
-              <button type="button" onClick={() => submit({ addressConfirmed: true, usedSuggestion: false })} disabled={submitting} className="border border-ink px-6 py-3 font-semibold disabled:opacity-60">
+              <button type="button" onClick={() => submit({ addressConfirmed: true, usedSuggestion: false })} disabled={submitting || needsCheck} className="border border-ink px-6 py-3 font-semibold disabled:opacity-60">
                 Keep mine
               </button>
             </div>

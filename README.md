@@ -73,6 +73,18 @@ To test reminders locally, run `bun run preview`, then trigger the cron:
 curl -X POST "http://localhost:8787/cdn-cgi/local/explorer/api/local/scheduled?worker=precise-formulations" -H "content-type: application/json" -d '{"cron":"*/15 * * * *"}'
 ```
 
+## Spam protection (Turnstile)
+
+Checkout shows a Cloudflare Turnstile widget, and `/api/orders` rejects requests without a valid token (`src/lib/turnstile.ts`). Because a token works only once and checkout can take two requests (address check, then "Use suggested" / "Keep mine"), the first request returns a 10-minute signed ticket that the second can use.
+
+Locally, `.dev.vars` uses Cloudflare's test keys, which always pass. At launch:
+
+1. In the client's Cloudflare dashboard, create a Turnstile widget for `preciseformulations.cc` (Managed mode).
+2. Put the site key in `TURNSTILE_SITE_KEY` in `wrangler.jsonc`.
+3. `bunx wrangler secret put TURNSTILE_SECRET_KEY` with the secret key.
+
+Until the secret key is set, the check is skipped and a warning is logged, so orders still work.
+
 ## Admin portal
 
 `/admin` lists orders with status tabs and search. Each order page has the next step: **Mark as paid**, **Mark as shipped** (with tracking number), **Cancel** (unpaid only) and tracking corrections. Each action emails the customer, and an action only applies if the order is still in the expected status, so double clicks are safe.
@@ -101,6 +113,6 @@ Values in `src/lib/store-config.ts` and `db/seed.sql` are placeholders until the
 1. Get added as a member of the client's Cloudflare account (Workers Paid plan).
 2. `bunx wrangler d1 create precise-formulations-db` and paste the `database_id` into `wrangler.jsonc`.
 3. `bun run db:migrate:remote`
-4. Add secrets: `bunx wrangler secret put RESEND_API_KEY` (and the USPS and Turnstile keys).
+4. Add secrets: `bunx wrangler secret put RESEND_API_KEY` (and the USPS and Turnstile keys), and set the Turnstile site key.
 5. Set up Cloudflare Access on `/admin*`.
 6. `bun run deploy`

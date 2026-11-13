@@ -5,6 +5,7 @@ import CheckoutForm from "../components/checkout/CheckoutForm";
 import { getDb, schema } from "../lib/db";
 import { AGREEMENT_TEXT, BOTTLE_LIMIT, SHIPPING_RATES } from "../lib/store-config";
 import { US_STATES } from "../lib/us-states";
+import { turnstileSiteKey } from "../lib/turnstile";
 
 // ?product=<slug> pre-selects one bottle of that serum (from the homepage buttons)
 const preselected = Astro.url.searchParams.get("product");
@@ -32,6 +33,7 @@ const products = await getDb()
       bottleLimit={BOTTLE_LIMIT}
       agreementText={AGREEMENT_TEXT}
       states={US_STATES}
+      turnstileSiteKey={turnstileSiteKey()}
     />
   </section>
 </Base>
